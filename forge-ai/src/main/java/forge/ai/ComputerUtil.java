@@ -2472,21 +2472,30 @@ public class ComputerUtil {
     }
 
     /**
-     * Scores the overall castability of all non-land cards in hand given the available
-     * mana sources, doubling the sum to weight it meaningfully against other score components.
+     * Scores the overall castability of non-land cards in hand given the available
+     * mana sources.
+     * <p>
+     * Castability is summed across all non-land cards and normalized by total hand
+     * size rather than spell count. This preserves the signal of how many castable
+     * spells are in hand: a hand with one castable spell out of seven scores much
+     * lower than one with six while preventing the score from scaling unboundedly
+     * with hand size. The result is scaled to a 0–8 range to keep it comparable in
+     * weight to other scoring components such as curve and color coverage.
      *
      * @param handList            the cards in the opening hand
      * @param landsInHand         the number of land cards in hand, used as a proxy for available mana
      * @param availableColors     a bitmask of colors the hand's lands can produce
      * @param hasColorlessSource  whether the hand contains a source of colorless mana
-     * @return a non-negative score representing aggregate castability
+     * @return a score in the range [0, 8] representing the density of castable spells in hand
      */
     private static int scoreTotalCastability(CardCollectionView handList, int landsInHand, byte availableColors, boolean hasColorlessSource) {
         float total = 0;
         for (Card c : handList) {
-            total += scoreCastability(c, landsInHand, availableColors, hasColorlessSource);
+            if (!c.isLand()) {
+                total += scoreCastability(c, landsInHand, availableColors, hasColorlessSource);
+            }
         }
-        return Math.round(total * 2);
+        return Math.round((total / handList.size()) * 8);
     }
 
     /**
