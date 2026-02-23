@@ -26,6 +26,8 @@ import forge.card.CardType;
 import forge.card.ColorSet;
 import forge.card.MagicColor;
 import forge.card.mana.ManaAtom;
+import forge.card.mana.ManaCost;
+import forge.card.mana.ManaCostShard;
 import forge.game.*;
 import forge.game.ability.AbilityKey;
 import forge.game.ability.AbilityUtils;
@@ -273,6 +275,7 @@ public class ComputerUtil {
     public static Card getCardPreference(final Player ai, final Card activate, final String pref, final CardCollection typeList) {
         return getCardPreference(ai, activate, pref, typeList, null);
     }
+
     public static Card getCardPreference(final Player ai, final Card activate, final String pref, final CardCollection typeList, SpellAbility sa) {
         final Game game = ai.getGame();
         String prefDef = "";
@@ -382,7 +385,7 @@ public class ComputerUtil {
 
             // try everything when about to die
             if (game.getPhaseHandler().getPhase().equals(PhaseType.COMBAT_DECLARE_BLOCKERS) && ComputerUtil.protectRecursion(sa,
-                        () -> ComputerUtilCombat.lifeInSeriousDanger(ai, game.getCombat()), false)) {
+                    () -> ComputerUtilCombat.lifeInSeriousDanger(ai, game.getCombat()), false)) {
                 final CardCollection nonCreatures = CardLists.getNotType(typeList, "Creature");
                 if (!nonCreatures.isEmpty()) {
                     return ComputerUtilCard.getWorstAI(nonCreatures);
@@ -391,8 +394,7 @@ public class ComputerUtil {
                     return ComputerUtilCard.getWorstAI(typeList);
                 }
             }
-        }
-        else if (pref.contains("DiscardCost")) { // search for permanents with DiscardMe
+        } else if (pref.contains("DiscardCost")) { // search for permanents with DiscardMe
             for (int ip = 0; ip < 6; ip++) { // priority 0 is the lowest, priority 5 the highest
                 final int priority = 6 - ip;
                 for (Card c : typeList) {
@@ -455,7 +457,7 @@ public class ComputerUtil {
             // try everything when about to die
             if (activate != null && "Reality Smasher".equals(activate.getName()) ||
                     game.getPhaseHandler().getPhase().equals(PhaseType.COMBAT_DECLARE_BLOCKERS)
-                    && ComputerUtilCombat.lifeInSeriousDanger(ai, game.getCombat())) {
+                            && ComputerUtilCombat.lifeInSeriousDanger(ai, game.getCombat())) {
                 if (!typeList.isEmpty()) {
                     return ComputerUtilCard.getWorstAI(typeList);
                 }
@@ -494,7 +496,7 @@ public class ComputerUtil {
                             num = Integer.parseInt(parValue);
                         } catch (NumberFormatException nfe) {
                             String[] valParts = StringUtils.split(parValue, "/");
-                            CardCollection foundCards  = AbilityUtils.getDefinedCards(c, valParts[0], sa);
+                            CardCollection foundCards = AbilityUtils.getDefinedCards(c, valParts[0], sa);
                             if (!foundCards.isEmpty()) {
                                 num = ComputerUtilCard.evaluateCreature(foundCards.get(0));
                             }
@@ -654,7 +656,7 @@ public class ComputerUtil {
     }
 
     public static CardCollection choosePutToLibraryFrom(final Player ai, final ZoneType zone, final String type, final Card activate,
-            final Card target, final int amount, SpellAbility sa) {
+                                                        final Card target, final int amount, SpellAbility sa) {
         CardCollection typeList = CardLists.getValidCards(ai.getCardsIn(zone), type.split(";"), activate.getController(), activate, sa);
 
         // don't move the card we're pumping
@@ -704,7 +706,7 @@ public class ComputerUtil {
     }
 
     public static CardCollection chooseTapTypeAccumulatePower(final Player ai, final String type, final SpellAbility sa,
-            final boolean tap, final int amount, final CardCollectionView exclude) {
+                                                              final boolean tap, final int amount, final CardCollectionView exclude) {
         // Used for Crewing vehicles, ideally we sort by useless creatures. Can't Attack/Defender
         int totalPower = 0;
         final Card activate = sa.getHostCard();
@@ -787,7 +789,7 @@ public class ComputerUtil {
     }
 
     public static CardCollection choosePermanentsToSacrifice(final Player ai, final CardCollectionView cardlist, final int amount, final SpellAbility source,
-            final boolean destroy, final boolean isOptional) {
+                                                             final boolean destroy, final boolean isOptional) {
         CardCollection remaining = new CardCollection(cardlist);
         final CardCollection sacrificed = new CardCollection();
         final Card host = source.getHostCard();
@@ -958,11 +960,9 @@ public class ComputerUtil {
         Card c = null;
         if (CardLists.getNotType(remaining, "Creature").isEmpty()) {
             c = ComputerUtilCard.getWorstCreatureAI(remaining);
-        }
-        else if (CardLists.getNotType(remaining, "Land").isEmpty()) {
+        } else if (CardLists.getNotType(remaining, "Land").isEmpty()) {
             c = ComputerUtilCard.getWorstLand(CardLists.filter(remaining, CardPredicates.LANDS));
-        }
-        else {
+        } else {
             c = ComputerUtilCard.getWorstPermanentAI(remaining, false, false, false, false);
         }
 
@@ -1057,6 +1057,7 @@ public class ComputerUtil {
 
     /**
      * Is it OK to cast this for less than the Max Targets?
+     *
      * @param source the source Card
      * @return true if it's OK to cast this Card for less than the max targets
      */
@@ -1075,6 +1076,7 @@ public class ComputerUtil {
 
     /**
      * Is this discard probably worse than a random draw?
+     *
      * @param discard Card to discard
      * @return boolean
      */
@@ -1124,7 +1126,7 @@ public class ComputerUtil {
         return sa.getHostCard().isCreature()
                 && sa.getPayCosts().hasTapCost()
                 && (ph.getPhase().isBefore(PhaseType.COMBAT_DECLARE_BLOCKERS)
-                        && !ph.getNextTurn().equals(sa.getActivatingPlayer()))
+                && !ph.getNextTurn().equals(sa.getActivatingPlayer()))
                 && !sa.getHostCard().hasSVar("EndOfTurnLeavePlay")
                 && !sa.hasParam("ActivationPhases");
     }
@@ -1148,7 +1150,7 @@ public class ComputerUtil {
 
         // cast Backup creatures in main 1 to pump attackers
         if (cardState.hasKeyword(Keyword.BACKUP)) {
-            for (Card potentialAtkr: ai.getCreaturesInPlay()) {
+            for (Card potentialAtkr : ai.getCreaturesInPlay()) {
                 if (ComputerUtilCard.doesCreatureAttackAI(ai, potentialAtkr)) {
                     return true;
                 }
@@ -1167,7 +1169,7 @@ public class ComputerUtil {
 
         // try not to cast Raid creatures in main 1 if an attack is likely
         if ("Count$AttackersDeclared".equals(card.getSVar("RaidTest")) && !cardState.hasKeyword(Keyword.HASTE)) {
-            for (Card potentialAtkr: ai.getCreaturesInPlay()) {
+            for (Card potentialAtkr : ai.getCreaturesInPlay()) {
                 if (ComputerUtilCard.doesCreatureAttackAI(ai, potentialAtkr)) {
                     return false;
                 }
@@ -1449,7 +1451,7 @@ public class ComputerUtil {
                 }
 
                 final String valid = params.get("ValidCard");
-                if (valid.contains("Creature.YouCtrl") || valid.contains("Other+YouCtrl") ) {
+                if (valid.contains("Creature.YouCtrl") || valid.contains("Other+YouCtrl")) {
 
                     final SpellAbility sa = t.getOverridingAbility();
                     if (sa != null && sa.getApi() == ApiType.Pump && sa.hasParam("KW")
@@ -1604,12 +1606,9 @@ public class ComputerUtil {
     /**
      * Returns list of objects threatened by effects on the stack
      *
-     * @param ai
-     *            calling player
-     * @param sa
-     *            SpellAbility to exclude
-     * @param top
-     *            only evaluate the top of the stack for threatening effects
+     * @param ai  calling player
+     * @param sa  SpellAbility to exclude
+     * @param top only evaluate the top of the stack for threatening effects
      * @return list of threatened objects
      */
     public static List<GameObject> predictThreatenedObjects(final Player ai, final SpellAbility sa, boolean top) {
@@ -1648,7 +1647,7 @@ public class ComputerUtil {
     }
 
     private static Iterable<? extends GameObject> predictThreatenedObjects(final Player aiPlayer, final SpellAbility saviour,
-            final SpellAbility topStack) {
+                                                                           final SpellAbility topStack) {
         Iterable<? extends GameObject> objects = new ArrayList<>();
         final List<GameObject> threatened = new ArrayList<>();
         ApiType saviourApi = saviour == null ? null : saviour.getApi();
@@ -1824,7 +1823,7 @@ public class ComputerUtil {
                     if (saviourApi == ApiType.Pump || saviourApi == ApiType.PumpAll) {
                         final boolean cantSave = c.getNetToughness() + toughness <= dmg
                                 || (!c.hasKeyword(Keyword.INDESTRUCTIBLE) && c.getShieldCount() == 0 && !grantIndestructible
-                                        && (dmg >= toughness + ComputerUtilCombat.getDamageToKill(c, false)));
+                                && (dmg >= toughness + ComputerUtilCombat.getDamageToKill(c, false)));
                         if (cantSave && (!topStack.usesTargeting() || !grantShroud)) {
                             continue;
                         }
@@ -1855,10 +1854,10 @@ public class ComputerUtil {
         // Destroy => regeneration/bounce/shroud
         else if ((threatApi == ApiType.Destroy || threatApi == ApiType.DestroyAll)
                 && ((saviourApi == ApiType.Regenerate
-                        && !topStack.hasParam("NoRegen")) || saviourApi == ApiType.ChangeZone
-                        || saviourApi == ApiType.Pump || saviourApi == ApiType.PumpAll
-                        || saviourApi == ApiType.Protection || saviourApi == null
-                        || saviorWithSubsApi == ApiType.Pump || saviorWithSubsApi == ApiType.PumpAll)) {
+                && !topStack.hasParam("NoRegen")) || saviourApi == ApiType.ChangeZone
+                || saviourApi == ApiType.Pump || saviourApi == ApiType.PumpAll
+                || saviourApi == ApiType.Protection || saviourApi == null
+                || saviorWithSubsApi == ApiType.Pump || saviorWithSubsApi == ApiType.PumpAll)) {
             for (final Object o : objects) {
                 if (o instanceof Card c) {
                     if (c.hasKeyword(Keyword.INDESTRUCTIBLE)) {
@@ -1932,7 +1931,7 @@ public class ComputerUtil {
         }
         //GainControl
         else if ((threatApi == ApiType.GainControl
-                    || (threatApi == ApiType.Attach && topStack.hasParam("AILogic") && topStack.getParam("AILogic").equals("GainControl") ))
+                || (threatApi == ApiType.Attach && topStack.hasParam("AILogic") && topStack.getParam("AILogic").equals("GainControl")))
                 && (saviourApi == ApiType.ChangeZone || saviourApi == ApiType.Pump || saviourApi == ApiType.PumpAll
                 || saviourApi == ApiType.Protection || saviourApi == null)) {
             for (final Object o : objects) {
@@ -1982,13 +1981,13 @@ public class ComputerUtil {
      * or from a killing spell on stack.
      * TODO: This currently does not account for the fact that spells on stack can be countered, can be improved.
      *
-     * @param creature
-     *            A creature to check
+     * @param creature A creature to check
      * @return true if the creature dies according to current board position.
      */
     public static boolean predictCreatureWillDieThisTurn(final Player ai, final Card creature, final SpellAbility excludeSa) {
         return predictCreatureWillDieThisTurn(ai, creature, excludeSa, false);
     }
+
     public static boolean predictCreatureWillDieThisTurn(final Player ai, final Card creature, final SpellAbility excludeSa, final boolean nonCombatOnly) {
         final Game game = ai.getGame();
 
@@ -2024,10 +2023,8 @@ public class ComputerUtil {
      * Works only on AI profiles which have AVOID_TARGETING_CREATS_THAT_WILL_DIE enabled, otherwise returns
      * the original list.
      *
-     * @param ai
-     *            The AI player performing this evaluation
-     * @param list
-     *            The list of cards to work with
+     * @param ai   The AI player performing this evaluation
+     * @param list The list of cards to work with
      * @return a filtered list with no dying creatures in it
      */
     public static CardCollection filterCreaturesThatWillDieThisTurn(final Player ai, final CardCollection list, final SpellAbility excludeSa) {
@@ -2171,85 +2168,400 @@ public class ComputerUtil {
         return bestRemoval != null ? bestRemoval : CardCollection.EMPTY;
     }
 
-    public static int scoreHand(CardCollectionView handList, Player player, int cardsToReturn) {
-        // TODO Improve hand scoring in relation to cards to return.
-        // If final hand size is 5, score a hand based on what that 5 would be.
-        // Or if this is really really fast, determine what the 5 would be based on scoring
-        // All of the possibilities
+    public static byte getProducibleColorMask(CardCollectionView lands, Player activator) {
+        Set<String> colors = new HashSet<>();
+        for (Card land : lands) {
+            for (SpellAbility sa : land.getManaAbilities()) {
+                sa.setActivatingPlayer(activator);
+                CardUtil.canProduce(5, sa, colors); // 5 = colors only
+            }
+        }
+        byte mask = 0;
+        for (String color : MagicColor.Constant.ONLY_COLORS) {
+            if (colors.contains(color)) {
+                mask |= MagicColor.fromName(color);
+            }
+        }
+        return mask;
+    }
 
-        int mulliganThreshold = 4; // Sensible default for humans
+    public static boolean canProduceColorless(CardCollectionView lands, Player activator) {
+        Set<String> colors = new HashSet<>();
+        for (Card land : lands) {
+            for (SpellAbility sa : land.getManaAbilities()) {
+                sa.setActivatingPlayer(activator);
+                CardUtil.canProduce(6, sa, colors); // 6 triggers the {C} check in canProduce
+            }
+        }
+        return colors.contains(MagicColor.Constant.COLORLESS);
+    }
+
+    /**
+     * Scores the castability of a card based on current hand state.
+     * Accounts for CMC vs Land Count, Specific Colorless {C} pips,
+     * and applies a scaling penalty for missing colors based on the card's curve.
+     */
+    public static float scoreCastability(Card c, int landsInHand, byte availableColors, boolean hasColorlessSource) {
+        if (c.isLand()) return 0;
+
+        ManaCost cost = c.getManaCost();
+        if (cost.isNoCost() || cost.isZero()) return 1.0f;
+
+        int cmc = cost.getCMC();
+
+        // 1. Mana Volume Ratio: How much of the total cost can we cover?
+        // We square this to moderately penalize being short on total lands.
+        float manaRatio = Math.min(1.0f, (float) landsInHand / cmc);
+        float manaScore = manaRatio * manaRatio;
+
+        // 2. Color/Specific Requirement Ratio
+        int coloredPips = 0;
+        int metPips = 0;
+
+        for (ManaCostShard shard : cost) {
+            // Phyrexian pips can always be paid with life; ignore for mana demand
+            if (shard.isPhyrexian()) continue;
+
+            if (shard.isColorless()) {
+                // Specific colorless requirement {C}
+                coloredPips++;
+                if (hasColorlessSource) metPips++;
+            } else if (shard.getColorMask() != 0) {
+                // Standard colored or hybrid pips
+                coloredPips++;
+                if (shard.canBePaidWithManaOfColor(availableColors)) metPips++;
+            }
+        }
+
+        // If no specific pips (all generic), colorRatio is 1.0
+        float colorRatio = coloredPips == 0 ? 1.0f : (float) metPips / coloredPips;
+        // We cube this because missing colors is a "harder" bottleneck than missing generic mana
+        float colorScore = (float) Math.pow(colorRatio, 3);
+
+        // 3. Tempo-Aware Missing Color Penalty
+        // If we are missing a required color, we apply a penalty that scales with CMC.
+        // Hitting a 1-drop on curve is vital (high penalty);
+        // missing a 6-drop color now is less scary as we have time to draw into it (lower penalty).
+        float missingColorPenalty = 1.0f;
+        if (metPips < coloredPips) {
+            // Penalty starts at 0.1 for CMC 1 and moves toward 0.8 for high CMC
+            missingColorPenalty = Math.min(0.8f, 0.1f + (cmc - 1) * 0.15f);
+        }
+
+        return manaScore * colorScore * missingColorPenalty;
+    }
+
+    /**
+     * Returns a color mask (based on ManaAtom bits) representing the deck's demand.
+     * A color/type must appear on at least 10% of non-land cards to be included.
+     */
+    private static int computeDeckColorDemand(CardCollectionView library, Player player) {
+        // Track how many unique cards demand each ManaAtom type
+        Map<Byte, Integer> typeCounts = new HashMap<>();
+        int nonLandCount = 0;
+
+        for (Card c : library) {
+            if (c.isLand()) continue;
+            nonLandCount++;
+
+            ManaCost cost = c.getManaCost();
+            int cardDemandMask = 0;
+
+            for (ManaCostShard shard : cost) {
+                // 1. Handle Colorless requirement ({C}), distinct from Generic ({1})
+                // Based on your ManaAtom, we ignore GENERIC (1 << 6) for 'demand'
+                if (shard.isColorless() && !shard.isGeneric()) {
+                    cardDemandMask |= ManaAtom.COLORLESS;
+                }
+
+                // 2. Handle Colored pips
+                // We iterate MANACOLORS to see which bits this shard satisfies
+                for (byte colorBit : ManaAtom.MANACOLORS) {
+                    if (shard.canBePaidWithManaOfColor(colorBit)) {
+                        cardDemandMask |= colorBit;
+                    }
+                }
+
+                // Note: If you want to skip Phyrexian, add:
+                // if (shard.isPhyrexian()) cardDemandMask &= ~shard.getColorMask();
+                // But usually, if 10% of your deck is Dismember, you WANT to know you need Black.
+            }
+
+            // Increment global counts for every type found on this specific card
+            for (byte typeBit : ManaAtom.MANATYPES) {
+                if ((cardDemandMask & typeBit) != 0) {
+                    typeCounts.merge(typeBit, 1, Integer::sum);
+                }
+            }
+        }
+
+        if (nonLandCount == 0) return 0;
+
+        int totalDemandMask = 0;
+        float threshold = nonLandCount * 0.10f;
+
+        for (byte typeBit : ManaAtom.MANATYPES) {
+            if (typeCounts.getOrDefault(typeBit, 0) >= threshold) {
+                totalDemandMask |= typeBit;
+            }
+        }
+
+        return totalDemandMask;
+    }
+
+    /**
+     * Returns the mulligan threshold for an AI-controlled player: the minimum
+     * acceptable final hand size before scoring is skipped entirely.
+     * Returns 0 for human players, meaning scoring is never skipped on their behalf.
+     *
+     * @param player the player whose mulligan threshold to retrieve
+     * @return the mulligan threshold, or 0 if the player is not AI-controlled
+     */
+    private static int getMulliganThreshold(Player player) {
         if (player.getController() instanceof PlayerControllerAi) {
             AiController aic = ((PlayerControllerAi) player.getController()).getAi();
-            mulliganThreshold = aic.getIntProperty(AiProps.MULLIGAN_THRESHOLD);
+            return aic.getIntProperty(AiProps.MULLIGAN_THRESHOLD);
         }
+        return 0;
+    }
 
-        int currentHandSize = handList.size();
-        int finalHandSize = currentHandSize - cardsToReturn;
+    /**
+     * Determines whether hand scoring should be skipped entirely, returning
+     * {@code finalHandSize} as the score directly instead.
+     * <p>
+     * Scoring is skipped when the hand is already too small to be worth evaluating
+     * (below the AI's mulligan threshold), or when the deck contains no lands
+     * (making land-ratio-based scoring meaningless).
+     *
+     * @param finalHandSize    the number of cards the player will keep after returning cards
+     * @param landsInDeck      the number of land cards in the player's library
+     * @param player           the player being evaluated
+     * @return {@code true} if scoring should be skipped
+     */
+    private static boolean shouldSkipScoring(int finalHandSize, int landsInDeck, Player player) {
+        if (finalHandSize < getMulliganThreshold(player)) return true;
+        if (landsInDeck == 0) return true;
+        return false;
+    }
 
-        // don't mulligan when already too low
-        if (finalHandSize < mulliganThreshold) {
-            return finalHandSize;
+    private static final int HEAVY_SPELL_DECK_LAND_RATIO = 6; // Heavy spell decks may have very few lands.
+    private static final int HEAVY_LAND_DECK_LAND_RATIO = 2; // Heavy lands or Momir.
+
+    /**
+     * Determines whether this hand is from a "special" deck archetype where the
+     * normal land-balance heuristics do not apply: for example, a heavy-spell deck
+     * that intentionally runs few lands, or a Momir Basic / heavy-land deck.
+     * <p>
+     * If this returns {@code true}, the hand should be accepted regardless of its
+     * land count, since the unusual ratio is intentional.
+     *
+     * @param landsInHand  the number of land cards in the opening hand
+     * @param handSize     the total number of cards in the hand
+     * @param landsInDeck  the number of land cards in the player's library
+     * @param library      the player's library, used to compute land density
+     * @return {@code true} if the deck is a recognised special archetype
+     */
+    private static boolean isSpecialDeck(int landsInHand, int handSize, int landsInDeck, CardCollectionView library) {
+        int librarySize = library.size();
+        float deckLandRatio = (float) librarySize / landsInDeck;
+        if (landsInHand < 2)                              return landsInDeck == 0 || deckLandRatio > HEAVY_SPELL_DECK_LAND_RATIO; // Heavy spell deck, it's ok
+        if (landsInHand == handSize)                      return deckLandRatio < HEAVY_LAND_DECK_LAND_RATIO; // Heavy land deck/Momir Basic, it's ok
+        if (handSize >= 7 && landsInHand >= handSize - 1) return deckLandRatio < HEAVY_LAND_DECK_LAND_RATIO; // Heavy land deck/Momir Basic, it's ok
+        return false;
+    }
+
+    /**
+     * Determines whether this hand is unkeepable due to a problematic land count.
+     * <p>
+     * A hand is considered bad if it has too few lands (likely unable to develop),
+     * too many lands (likely to flood), or is a full-size hand that is all-but-lands.
+     * The land density of the deck is used to confirm the ratio is genuinely wrong
+     * and not just a feature of a special archetype (see {@link #isSpecialDeck}).
+     *
+     * @param landsInHand  the number of land cards in the opening hand
+     * @param handSize     the total number of cards in the hand
+     * @param landsInDeck  the number of land cards in the player's library
+     * @param library      the player's library, used to compute land density
+     * @return {@code true} if this hand should be mulliganed
+     */
+    private static boolean isBadHand(int landsInHand, int handSize, int landsInDeck, CardCollectionView library) {
+        int librarySize = library.size();
+        float deckLandRatio = (float) librarySize / landsInDeck;
+        if (landsInHand < 2)                              return deckLandRatio <= HEAVY_SPELL_DECK_LAND_RATIO; // BAD Hand: 0 or 1 lands, except in extremely spell heavy decks
+        if (landsInHand == handSize)                      return deckLandRatio >= HEAVY_LAND_DECK_LAND_RATIO;  // BAD Hand: all lands, except in extremely land heavy decks
+        if (handSize >= 7 && landsInHand >= handSize - 1) return deckLandRatio >= HEAVY_LAND_DECK_LAND_RATIO;  // BAD Hand: mana flooding, except in extremely land heavy decks
+        return false;
+    }
+
+    /**
+     * Returns the score delta for hands containing the card "Living End".
+     * <p>
+     * Living End is a cascade target that is never meant to be cast from hand —
+     * having it in the opening hand is actively harmful. Each copy found applies
+     * a penalty of 10 points on top of negating the base hand size score.
+     *
+     * @param handList   the cards in the opening hand
+     * @param baseScore  the current base score (typically equal to hand size) to negate
+     * @return a negative score delta if Living End is present, or {@code 0} otherwise
+     */
+    private static int scoreLivingEnd(CardCollectionView handList, int baseScore) {
+        long count = CardLists.count(handList, c -> "Living End".equalsIgnoreCase(c.getName()));
+        return count > 0 ? (int) -(count * 10) - baseScore : 0; // returns delta from baseScore
+    }
+
+    private static final float IDEAL_LAND_RATIO = 0.40f;
+    private static final float LAND_BALANCE_TOLERANCE_RATIO = 0.15f;
+
+    /**
+     * Returns a bonus score for hands whose land count is close to the ideal land ratio
+     * for the given hand size, representing a well-balanced mix of lands and spells.
+     * <p>
+     * The ideal land count is {@code round(handSize * IDEAL_LAND_RATIO)} and the
+     * tolerance window scales with hand size via {@code LAND_BALANCE_TOLERANCE_RATIO},
+     * so larger hands are not penalized for missing a fixed window.
+     *
+     * @param landsInHand  the number of land cards in the opening hand
+     * @param handSize     the total number of cards in the hand
+     * @return 10 if land balance is within tolerance of ideal, 0 otherwise
+     */
+    private static int scoreLandBalance(int landsInHand, int handSize) {
+        int ideal = Math.round(handSize * IDEAL_LAND_RATIO); // 7 card hand = 3
+        int tolerance = Math.max(1, Math.round(handSize * LAND_BALANCE_TOLERANCE_RATIO)); // 7 card hand = 1
+        return Math.abs(landsInHand - ideal) <= tolerance ? 10 : 0; // 7 card hand = 2-4 lands.
+    }
+
+    /**
+     * Computes a bitmask of all colors demanded by the deck and the cards currently
+     * in hand, combining the deck's overall color requirements with the specific
+     * costs of non-land, non-artifact spells in the opening hand.
+     *
+     * @param library   the player's library, used for deck-level color demand
+     * @param handList  the cards in the opening hand
+     * @param player    the player being evaluated
+     * @return a bitmask of all color pips required to function
+     */
+    private static int computeCombinedColorDemand(CardCollectionView library, CardCollectionView handList, Player player) {
+        int demand = computeDeckColorDemand(library, player);
+        for (Card c : handList) {
+            if (!c.isLand() && !c.isArtifact()) {
+                for (ManaCostShard shard : c.getManaCost()) {
+                    demand |= shard.getColorMask();
+                }
+            }
         }
+        return demand;
+    }
 
+    /**
+     * Scores how well the hand's lands cover the color requirements of the deck.
+     * <p>
+     * Full marks (8) are awarded if the hand satisfies every required color, or if
+     * the deck is entirely colorless. Partial coverage scales linearly from 0–5.
+     *
+     * @param combinedAvailable  a bitmask of colors (and colorless) the hand's lands can produce
+     * @param deckColorDemand    a bitmask of all colors the deck requires
+     * @return a score in the range [0, 8]
+     */
+    private static int scoreColorCoverage(int combinedAvailable, int deckColorDemand) {
+        int totalNeeded = Integer.bitCount(deckColorDemand);
+        if (totalNeeded == 0) return 8; // colorless deck: full points.
+
+        int numCovered = Integer.bitCount(combinedAvailable & deckColorDemand);
+        if (numCovered == totalNeeded) return 8; // Hand has all needed colors, full points.
+        return Math.round((float) numCovered / totalNeeded * 5); // 0 - 5 point scale for semi-coverage.
+    }
+
+    /**
+     * Scores the overall castability of all non-land cards in hand given the available
+     * mana sources, doubling the sum to weight it meaningfully against other score components.
+     *
+     * @param handList            the cards in the opening hand
+     * @param landsInHand         the number of land cards in hand, used as a proxy for available mana
+     * @param availableColors     a bitmask of colors the hand's lands can produce
+     * @param hasColorlessSource  whether the hand contains a source of colorless mana
+     * @return a non-negative score representing aggregate castability
+     */
+    private static int scoreTotalCastability(CardCollectionView handList, int landsInHand, byte availableColors, boolean hasColorlessSource) {
+        float total = 0;
+        for (Card c : handList) {
+            total += scoreCastability(c, landsInHand, availableColors, hasColorlessSource);
+        }
+        return Math.round(total * 2);
+    }
+
+    /**
+     * Scores how well the hand curves out over the first three turns.
+     * <p>
+     * A bonus is awarded for each turn (1–3) on which the hand can both play a land
+     * and cast a spell of that CMC. The total is capped at 8 to prevent it from
+     * dominating the overall score.
+     *
+     * @param handList     the cards in the opening hand
+     * @param landsInHand  the number of land cards in hand
+     * @return a curve bonus in the range [0, 8]
+     */
+    private static int scoreCurve(CardCollectionView handList, int landsInHand) {
+        int[] spellsByTurn = new int[4];
+        for (Card c : handList) {
+            if (!c.isLand()) {
+                spellsByTurn[Math.min(c.getManaCost().getCMC(), 3)]++;
+            }
+        }
+        int bonus = 0;
+        for (int turn = 1; turn <= 3; turn++) {
+            if (spellsByTurn[turn] > 0 && landsInHand >= turn) bonus += turn;
+        }
+        return Math.min(bonus, 8);
+    }
+
+    /**
+     * Computes a numeric score for an AI player's opening hand, used to decide
+     * whether to mulligan.
+     * <p>
+     * The score begins at hand size and accumulates bonuses from:
+     * <ul>
+     *   <li>Land balance (ratio of lands to spells)</li>
+     *   <li>color coverage (whether lands satisfy the deck's color requirements)</li>
+     *   <li>Castability (whether hand spells can realistically be cast)</li>
+     *   <li>Curve (whether the hand can play on curve over the first three turns)</li>
+     * </ul>
+     * Special-case handling is applied for degenerate deck archetypes (land-light or
+     * land-heavy) and for combo pieces like Living End that are harmful to draw.
+     * Returns {@code finalHandSize} without scoring when heuristics cannot apply
+     * (e.g. landless decks, or hands below the AI's mulligan threshold).
+     *
+     * @param handList      the cards in the opening hand
+     * @param player        the player being evaluated
+     * @param cardsToReturn the number of cards to be put back (for partial-hand scoring)
+     * @return a score representing hand quality; higher is better
+     */
+    public static int scoreHand(CardCollectionView handList, Player player, int cardsToReturn) {
         CardCollectionView library = player.getCardsIn(ZoneType.Library);
+        CardCollectionView handLands = CardLists.filter(handList, CardPredicates.LANDS);
+
+        int landsInHand = handLands.size();
         int landsInDeck = CardLists.count(library, CardPredicates.LANDS);
 
-        // no land deck, can't do anything better
-        if (landsInDeck == 0) {
-            return finalHandSize;
-        }
+        int handSize = handList.size();
+        int finalHandSize = handSize - cardsToReturn;
 
-        final CardCollectionView lands = CardLists.filter(handList, c -> c.getManaCost().getCMC() <= 0 && !c.hasSVar("NeedsToPlay")
-                && (c.isLand() || c.isArtifact()));
+        if (shouldSkipScoring(finalHandSize, landsInDeck, player)) return finalHandSize;
+        if (isSpecialDeck(landsInHand, handSize, landsInDeck, library)) return finalHandSize;
+        if (isBadHand(landsInHand, handSize, landsInDeck, library)) return 0;
 
-        final int handSize = handList.size();
-        final int landSize = lands.size();
-        int score = handList.size();
-        //adjust score for Living End decks
-        final CardCollectionView livingEnd = CardLists.filter(handList, c -> "Living End".equalsIgnoreCase(c.getName()));
-        if (livingEnd.size() > 0)
-            score = -(livingEnd.size() * 10);
+        int score = handSize;
+        score += scoreLivingEnd(handList, handSize); // Special case for Living End decks.
+        score += scoreLandBalance(landsInHand, handSize); // Bonus points for 3 or 4 land hands.
 
-        if (handSize/2 == landSize || handSize/2 == landSize +1) {
-            score += 10;
-        }
+        int deckColorDemand = computeCombinedColorDemand(library, handList, player);
+        byte availableColors = getProducibleColorMask(handLands, player);
+        boolean hasColorlessSource = canProduceColorless(handLands, player);
+        int combinedAvailable = availableColors | (hasColorlessSource ? ManaAtom.COLORLESS : 0);
 
-        // Don't count lands as castables.
-        final CardCollectionView castables = CardLists.filter(handList, c ->
-                !c.isLand() && (c.getManaCost().getCMC() <= 0 || c.getManaCost().getCMC() <= landSize));
+        score += scoreColorCoverage(combinedAvailable, deckColorDemand);
+        score += scoreTotalCastability(handList, landsInHand, availableColors, hasColorlessSource);
+        score += scoreCurve(handList, landsInHand); // Bonus for having spells to play on curve.
 
-        score += castables.size() * 2;
-
-        // Improve score for perceived mana efficiency of the hand
-
-        // if at mulligan threshold, and we have any lands accept the hand
-        if ((handSize == mulliganThreshold) && landSize > 0) {
-            return score;
-        }
-
-        // otherwise, reject bad hands or return score
-        if (landSize < 2) {
-            // BAD Hands, 0 or 1 lands
-            if (landsInDeck == 0 || library.size()/landsInDeck > 6) {
-                // Heavy spell deck it's ok
-                return handSize;
-            }
-            return 0;
-        } else if (landSize == handSize) {
-            if (library.size()/landsInDeck < 2) {
-                // Heavy land deck/Momir Basic it's ok
-                return handSize;
-            }
-            return 0;
-        } else if (handSize >= 7 && landSize >= handSize-1) {
-            // BAD Hands - Mana flooding
-
-            if (library.size()/landsInDeck < 2) {
-                // Heavy land deck/Momir Basic it's ok
-                return handSize;
-            }
-            return 0;
-        }
         return score;
     }
 
@@ -2273,10 +2585,10 @@ public class ComputerUtil {
         }
         if (lands.size() < 3) {
             //Not enough lands!
-            int tgtCandidates = Math.max(Math.abs(lands.size()-nonLands.size()), 3);
+            int tgtCandidates = Math.max(Math.abs(lands.size() - nonLands.size()), 3);
             System.out.println("Partial Paris: " + ai.getName() + " lacks lands, aiming to exile " + tgtCandidates + " cards.");
 
-            for (int i=0;i<tgtCandidates;i++) {
+            for (int i = 0; i < tgtCandidates; i++) {
                 candidates.add(nonLands.get(i));
             }
         } else {
@@ -2431,7 +2743,7 @@ public class ComputerUtil {
 
     public static CardCollection getCardsToDiscardFromFriend(Player aiChooser, Player p, SpellAbility sa, CardCollection validCards, int min, int max) {
         if (p == aiChooser) { // ask that ai player what he would like to discard
-            final AiController aic = ((PlayerControllerAi)p.getController()).getAi();
+            final AiController aic = ((PlayerControllerAi) p.getController()).getAi();
             return aic.getCardsToDiscard(min, max, validCards, sa);
         }
         // no special options for human or remote friends
@@ -2530,7 +2842,7 @@ public class ComputerUtil {
                 if (logic.equals("MostProminentOppControls")) {
                     CardCollection list = ai.getOpponents().getCardsIn(ZoneType.Battlefield);
                     chosen = ComputerUtilCard.getMostProminentType(list, validTypes);
-                } else  if (logic.equals("MostNeededType")) {
+                } else if (logic.equals("MostNeededType")) {
                     // Choose a type that is in the deck, but not in hand or on the battlefield
                     final Collection<String> basics = CardType.getBasicTypes();
                     CardCollectionView presentCards = CardCollection.combine(ai.getCardsIn(ZoneType.Battlefield), ai.getCardsIn(ZoneType.Hand));
@@ -2548,8 +2860,7 @@ public class ComputerUtil {
                             }
                         }
                     }
-                }
-                else if (logic.equals("ChosenLandwalk")) {
+                } else if (logic.equals("ChosenLandwalk")) {
                     for (Card c : AiAttackController.choosePreferredDefenderPlayer(ai).getLandsInPlay()) {
                         for (String t : c.getType().getLandTypes()) {
                             if (CardType.isABasicLandType(t)) {
@@ -2564,8 +2875,7 @@ public class ComputerUtil {
             if (!CardType.isABasicLandType(chosen) || !validTypes.contains(chosen)) {
                 chosen = "Island";
             }
-        }
-        else if (kindOfType.equals("Land")) {
+        } else if (kindOfType.equals("Land")) {
             if (logic != null) {
                 if (logic.equals("ChosenLandwalk")) {
                     for (Card c : AiAttackController.choosePreferredDefenderPlayer(ai).getLandsInPlay()) {
@@ -2600,186 +2910,186 @@ public class ComputerUtil {
 
         String logic = sa.getParam("AILogic");
         switch (logic) {
-        case "Torture":
-            return options.get(1);
-        case "GraceOrCondemnation":
-            List<ZoneType> graceZones = new ArrayList<ZoneType>();
-            graceZones.add(ZoneType.Battlefield);
-            graceZones.add(ZoneType.Graveyard);
-            CardCollection graceCreatures = CardLists.getType(game.getCardsIn(graceZones), "Creature");
-            int humanGrace = CardLists.filterControlledBy(graceCreatures, ai.getOpponents()).size();
-            int aiGrace = CardLists.filterControlledBy(graceCreatures, ai).size();
-            return options.get(aiGrace > humanGrace ? 0 : 1);
-        case "CarnageOrHomage":
-            CardCollection cardsInPlay = CardLists.getNotType(game.getCardsIn(ZoneType.Battlefield), "Land");
-            CardCollection humanlist = CardLists.filterControlledBy(cardsInPlay, ai.getOpponents());
-            CardCollection computerlist = ai.getCreaturesInPlay();
-            return options.get(ComputerUtilCard.evaluatePermanentList(computerlist) + 3 < ComputerUtilCard.evaluatePermanentList(humanlist) ? 0 : 1);
-        case "Judgment":
-            if (votes.isEmpty()) {
-                CardCollection list = new CardCollection();
-                for (Object o : options) {
-                    if (o instanceof Card) {
-                        list.add((Card) o);
+            case "Torture":
+                return options.get(1);
+            case "GraceOrCondemnation":
+                List<ZoneType> graceZones = new ArrayList<ZoneType>();
+                graceZones.add(ZoneType.Battlefield);
+                graceZones.add(ZoneType.Graveyard);
+                CardCollection graceCreatures = CardLists.getType(game.getCardsIn(graceZones), "Creature");
+                int humanGrace = CardLists.filterControlledBy(graceCreatures, ai.getOpponents()).size();
+                int aiGrace = CardLists.filterControlledBy(graceCreatures, ai).size();
+                return options.get(aiGrace > humanGrace ? 0 : 1);
+            case "CarnageOrHomage":
+                CardCollection cardsInPlay = CardLists.getNotType(game.getCardsIn(ZoneType.Battlefield), "Land");
+                CardCollection humanlist = CardLists.filterControlledBy(cardsInPlay, ai.getOpponents());
+                CardCollection computerlist = ai.getCreaturesInPlay();
+                return options.get(ComputerUtilCard.evaluatePermanentList(computerlist) + 3 < ComputerUtilCard.evaluatePermanentList(humanlist) ? 0 : 1);
+            case "Judgment":
+                if (votes.isEmpty()) {
+                    CardCollection list = new CardCollection();
+                    for (Object o : options) {
+                        if (o instanceof Card) {
+                            list.add((Card) o);
+                        }
+                    }
+                    return ComputerUtilCard.getBestAI(list);
+                }
+                return Iterables.getFirst(votes.keySet(), null);
+            case "Protection":
+                if (votes.isEmpty()) {
+                    Map<String, SpellAbility> restrictedToColors = Maps.newHashMap();
+                    for (Object o : options) {
+                        if (o instanceof SpellAbility sp) { // TODO check for Color Word Changes
+                            restrictedToColors.put(sp.getOriginalDescription(), sp);
+                        }
+                    }
+                    CardCollection lists = CardLists.filterControlledBy(game.getCardsInGame(), ai.getOpponents());
+                    return restrictedToColors.get(StringUtils.capitalize(ComputerUtilCard.getMostProminentColor(lists, restrictedToColors.keySet())));
+                }
+                return Iterables.getFirst(votes.keySet(), null);
+            case "FeatherOrQuill":
+                SpellAbility feather = (SpellAbility) options.get(0);
+                SpellAbility quill = (SpellAbility) options.get(1);
+                // try to mill opponent with Quill vote
+                if (opponent && !controller.cantLoseCheck(GameLossReason.Milled)) {
+                    int numQuill = votes.get(quill).size();
+                    if (numQuill + 1 >= controller.getCardsIn(ZoneType.Library).size()) {
+                        return controller.isCardInPlay("Laboratory Maniac") ? feather : quill;
                     }
                 }
-                return ComputerUtilCard.getBestAI(list);
-            }
-            return Iterables.getFirst(votes.keySet(), null);
-        case "Protection":
-            if (votes.isEmpty()) {
-                Map<String, SpellAbility> restrictedToColors = Maps.newHashMap();
-                for (Object o : options) {
-                    if (o instanceof SpellAbility sp) { // TODO check for Color Word Changes
-                        restrictedToColors.put(sp.getOriginalDescription(), sp);
+                // is it can't receive counters, choose +1/+1 ones
+                if (!source.canReceiveCounters(p1p1Type)) {
+                    return opponent ? feather : quill;
+                }
+                // if source is not on the battlefield anymore, choose +1/+1 ones
+                if (!game.getCardState(source).isInPlay()) {
+                    return opponent ? feather : quill;
+                }
+                // if no hand cards, try to mill opponent
+                if (controller.getCardsIn(ZoneType.Hand).isEmpty()) {
+                    return opponent ? quill : feather;
+                }
+
+                // AI has something to discard
+                if (ai.equals(controller)) {
+                    CardCollectionView aiCardsInHand = ai.getCardsIn(ZoneType.Hand);
+                    if (CardLists.count(aiCardsInHand, CardPredicates.hasSVar("DiscardMe")) >= 1) {
+                        return quill;
                     }
                 }
-                CardCollection lists = CardLists.filterControlledBy(game.getCardsInGame(), ai.getOpponents());
-                return restrictedToColors.get(StringUtils.capitalize(ComputerUtilCard.getMostProminentColor(lists, restrictedToColors.keySet())));
-            }
-            return Iterables.getFirst(votes.keySet(), null);
-        case "FeatherOrQuill":
-            SpellAbility feather = (SpellAbility)options.get(0);
-            SpellAbility quill = (SpellAbility)options.get(1);
-            // try to mill opponent with Quill vote
-            if (opponent && !controller.cantLoseCheck(GameLossReason.Milled)) {
-                int numQuill = votes.get(quill).size();
-                if (numQuill + 1 >= controller.getCardsIn(ZoneType.Library).size()) {
-                    return controller.isCardInPlay("Laboratory Maniac") ? feather : quill;
-                }
-            }
-            // is it can't receive counters, choose +1/+1 ones
-            if (!source.canReceiveCounters(p1p1Type)) {
+
+                // default card draw and discard are better than +1/+1 counter
                 return opponent ? feather : quill;
-            }
-            // if source is not on the battlefield anymore, choose +1/+1 ones
-            if (!game.getCardState(source).isInPlay()) {
-                return opponent ? feather : quill;
-            }
-            // if no hand cards, try to mill opponent
-            if (controller.getCardsIn(ZoneType.Hand).isEmpty()) {
-                return opponent ? quill : feather;
-            }
+            case "StrengthOrNumbers":
+                SpellAbility strength = (SpellAbility) options.get(0);
+                SpellAbility numbers = (SpellAbility) options.get(1);
+                // similar to fabricate choose +1/+1 or Token
+                int numStrength = votes.get(strength).size();
+                int numNumbers = votes.get(numbers).size();
 
-            // AI has something to discard
-            if (ai.equals(controller)) {
-                CardCollectionView aiCardsInHand = ai.getCardsIn(ZoneType.Hand);
-                if (CardLists.count(aiCardsInHand, CardPredicates.hasSVar("DiscardMe")) >= 1) {
-                    return quill;
+                Card token = TokenAi.spawnToken(controller, numbers);
+
+                // is it can't receive counters, choose +1/+1 ones
+                if (!source.canReceiveCounters(p1p1Type)) {
+                    return opponent ? strength : numbers;
                 }
-            }
 
-            // default card draw and discard are better than +1/+1 counter
-            return opponent ? feather : quill;
-        case "StrengthOrNumbers":
-            SpellAbility strength = (SpellAbility)options.get(0);
-            SpellAbility numbers = (SpellAbility)options.get(1);
-            // similar to fabricate choose +1/+1 or Token
-            int numStrength = votes.get(strength).size();
-            int numNumbers = votes.get(numbers).size();
-
-            Card token = TokenAi.spawnToken(controller, numbers);
-
-            // is it can't receive counters, choose +1/+1 ones
-            if (!source.canReceiveCounters(p1p1Type)) {
-                return opponent ? strength : numbers;
-            }
-
-            // if source is not on the battlefield anymore
-            if (!game.getCardState(source).isInPlay()) {
-                return opponent ? strength : numbers;
-            }
-
-            // token would not survive
-            if (token == null || !token.isCreature()  || token.getNetToughness() < 1) {
-                return opponent ? numbers : strength;
-            }
-
-            // TODO check for ETB to +1/+1 counters or over another trigger like lifegain
-
-            int tokenScore = ComputerUtilCard.evaluateCreature(token);
-
-            // score check similar to Fabricate
-            Card sourceNumbers = CardCopyService.getLKICopy(source);
-            Card sourceStrength = CardCopyService.getLKICopy(source);
-
-            sourceNumbers.setCounters(p1p1Type, sourceNumbers.getCounters(p1p1Type) + numStrength);
-            sourceNumbers.setZone(source.getZone());
-
-            sourceStrength.setCounters(p1p1Type,
-                    sourceStrength.getCounters(p1p1Type) + numStrength + 1);
-            sourceStrength.setZone(source.getZone());
-
-            int scoreStrength = ComputerUtilCard.evaluateCreature(sourceStrength) + tokenScore * numNumbers;
-            int scoreNumbers = ComputerUtilCard.evaluateCreature(sourceNumbers) + tokenScore * (numNumbers + 1);
-
-            return (scoreNumbers >= scoreStrength) != opponent ? numbers : strength;
-        case "SproutOrHarvest":
-            SpellAbility sprout = (SpellAbility)options.get(0);
-            SpellAbility harvest = (SpellAbility)options.get(1);
-            // lifegain would hurt or has no effect
-            if (opponent) {
-                if (lifegainNegative(controller, source)) {
-                    return harvest;
+                // if source is not on the battlefield anymore
+                if (!game.getCardState(source).isInPlay()) {
+                    return opponent ? strength : numbers;
                 }
-            } else {
-                if (lifegainNegative(controller, source)) {
-                    return sprout;
+
+                // token would not survive
+                if (token == null || !token.isCreature() || token.getNetToughness() < 1) {
+                    return opponent ? numbers : strength;
                 }
-            }
 
-            // is it can't receive counters, choose +1/+1 ones
-            if (!source.canReceiveCounters(p1p1Type)) {
-                return opponent ? sprout : harvest;
-            }
+                // TODO check for ETB to +1/+1 counters or over another trigger like lifegain
 
-            // if source is not on the battlefield anymore
-            if (!game.getCardState(source).isInPlay()) {
-                return opponent ? sprout : harvest;
-            }
-            // TODO add Lifegain to +1/+1 counters trigger
+                int tokenScore = ComputerUtilCard.evaluateCreature(token);
 
-            // for now +1/+1 counters are better
-            return opponent ? harvest : sprout;
-        case "DeathOrTaxes":
-            SpellAbility death = (SpellAbility)options.get(0);
-            SpellAbility taxes = (SpellAbility)options.get(1);
+                // score check similar to Fabricate
+                Card sourceNumbers = CardCopyService.getLKICopy(source);
+                Card sourceStrength = CardCopyService.getLKICopy(source);
 
-            int numDeath = votes.get(death).size();
-            int numTaxes = votes.get(taxes).size();
+                sourceNumbers.setCounters(p1p1Type, sourceNumbers.getCounters(p1p1Type) + numStrength);
+                sourceNumbers.setZone(source.getZone());
 
-            if (opponent) {
-                CardCollection aiCreatures = ai.getCreaturesInPlay();
-                CardCollectionView aiCardsInHand = ai.getCardsIn(ZoneType.Hand);
-                // would need to sacrifice more creatures than AI has
-                // sacrifice even more
-                if (aiCreatures.size() <= numDeath) {
-                    return death;
+                sourceStrength.setCounters(p1p1Type,
+                        sourceStrength.getCounters(p1p1Type) + numStrength + 1);
+                sourceStrength.setZone(source.getZone());
+
+                int scoreStrength = ComputerUtilCard.evaluateCreature(sourceStrength) + tokenScore * numNumbers;
+                int scoreNumbers = ComputerUtilCard.evaluateCreature(sourceNumbers) + tokenScore * (numNumbers + 1);
+
+                return (scoreNumbers >= scoreStrength) != opponent ? numbers : strength;
+            case "SproutOrHarvest":
+                SpellAbility sprout = (SpellAbility) options.get(0);
+                SpellAbility harvest = (SpellAbility) options.get(1);
+                // lifegain would hurt or has no effect
+                if (opponent) {
+                    if (lifegainNegative(controller, source)) {
+                        return harvest;
+                    }
+                } else {
+                    if (lifegainNegative(controller, source)) {
+                        return sprout;
+                    }
                 }
-                // would need to discard more cards than it has
-                if (aiCardsInHand.size() <= numTaxes) {
+
+                // is it can't receive counters, choose +1/+1 ones
+                if (!source.canReceiveCounters(p1p1Type)) {
+                    return opponent ? sprout : harvest;
+                }
+
+                // if source is not on the battlefield anymore
+                if (!game.getCardState(source).isInPlay()) {
+                    return opponent ? sprout : harvest;
+                }
+                // TODO add Lifegain to +1/+1 counters trigger
+
+                // for now +1/+1 counters are better
+                return opponent ? harvest : sprout;
+            case "DeathOrTaxes":
+                SpellAbility death = (SpellAbility) options.get(0);
+                SpellAbility taxes = (SpellAbility) options.get(1);
+
+                int numDeath = votes.get(death).size();
+                int numTaxes = votes.get(taxes).size();
+
+                if (opponent) {
+                    CardCollection aiCreatures = ai.getCreaturesInPlay();
+                    CardCollectionView aiCardsInHand = ai.getCardsIn(ZoneType.Hand);
+                    // would need to sacrifice more creatures than AI has
+                    // sacrifice even more
+                    if (aiCreatures.size() <= numDeath) {
+                        return death;
+                    }
+                    // would need to discard more cards than it has
+                    if (aiCardsInHand.size() <= numTaxes) {
+                        return taxes;
+                    }
+
+                    // has cards with SacMe or Token
+                    if (CardLists.count(aiCreatures, CardPredicates.hasSVar("SacMe").or(CardPredicates.TOKEN)) >= numDeath) {
+                        return death;
+                    }
+
+                    // has cards with DiscardMe
+                    if (CardLists.count(aiCardsInHand, CardPredicates.hasSVar("DiscardMe")) >= numTaxes) {
+                        return taxes;
+                    }
+
+                    // discard is probably less worse than sacrifice
                     return taxes;
+                } else {
+                    // ai is first voter or ally of controller
+                    // both are not affected, but if opponents control creatures, sacrifice is worse
+                    return controller.getOpponents().getCreaturesInPlay().isEmpty() ? taxes : death;
                 }
-
-                // has cards with SacMe or Token
-                if (CardLists.count(aiCreatures, CardPredicates.hasSVar("SacMe").or(CardPredicates.TOKEN)) >= numDeath) {
-                    return death;
-                }
-
-                // has cards with DiscardMe
-                if (CardLists.count(aiCardsInHand, CardPredicates.hasSVar("DiscardMe")) >= numTaxes) {
-                    return taxes;
-                }
-
-                // discard is probably less worse than sacrifice
-                return taxes;
-            } else {
-                // ai is first voter or ally of controller
-                // both are not affected, but if opponents control creatures, sacrifice is worse
-                return controller.getOpponents().getCreaturesInPlay().isEmpty() ? taxes : death;
-            }
-        default:
-            return Iterables.getFirst(options, null);
+            default:
+                return Iterables.getFirst(options, null);
         }
     }
 
@@ -2804,14 +3114,18 @@ public class ComputerUtil {
 
         while (ab != null && targetPlayer.canLoseLife()) {
             if (ab.getApi() == ApiType.DealDamage) {
-                if (damage == -1) { damage = 0; } // found a damage-dealing spell
+                if (damage == -1) {
+                    damage = 0;
+                } // found a damage-dealing spell
                 if (!ab.hasParam("NumDmg")) {
                     continue;
                 }
                 damage += ComputerUtilCombat.predictDamageTo(targetPlayer,
                         AbilityUtils.calculateAmount(card, ab.getParam("NumDmg"), ab), card, false);
             } else if (ab.getApi() == ApiType.LoseLife) {
-                if (damage == -1) { damage = 0; } // found a damage-dealing spell
+                if (damage == -1) {
+                    damage = 0;
+                } // found a damage-dealing spell
                 if (!ab.hasParam("LifeAmount")) {
                     continue;
                 }
@@ -3015,7 +3329,7 @@ public class ComputerUtil {
                 // return true for counterspells so that the AI can take into account that it may need to cast it later in the opponent's turn
                 return true;
             }
-            AiPlayDecision decision = ((PlayerControllerAi)ai.getController()).getAi().canPlaySa(sa);
+            AiPlayDecision decision = ((PlayerControllerAi) ai.getController()).getAi().canPlaySa(sa);
             if (decision == AiPlayDecision.WillPlay || decision == AiPlayDecision.WaitForMain2) {
                 return true;
             }
@@ -3052,6 +3366,7 @@ public class ComputerUtil {
     public static boolean lifegainNegative(final Player player, final Card source) {
         return lifegainNegative(player, source, 1);
     }
+
     public static boolean lifegainNegative(final Player player, final Card source, final int n) {
         if (!player.canGainLife()) {
             return false;
@@ -3063,9 +3378,9 @@ public class ComputerUtil {
         repParams.put(AbilityKey.Source, source);
 
         List<ReplacementEffect> list = player.getGame().getReplacementHandler().getReplacementList(
-            ReplacementType.GainLife,
-            repParams,
-            ReplacementLayer.Other
+                ReplacementType.GainLife,
+                repParams,
+                ReplacementLayer.Other
         );
 
         if (list.stream().anyMatch(CardTraitPredicates.hasParam("AILogic", "NoLife"))) {
@@ -3131,7 +3446,7 @@ public class ComputerUtil {
 
         for (Card c : creats) {
             if (!ComputerUtilCard.isUselessCreature(p, c)) {
-                count ++;
+                count++;
             }
         }
 
@@ -3213,6 +3528,7 @@ public class ComputerUtil {
     public static boolean aiLifeInDanger(Player ai, boolean serious, int payment) {
         return predictNextCombatsRemainingLife(ai, serious, false, payment, null) == Integer.MIN_VALUE;
     }
+
     public static int predictNextCombatsRemainingLife(Player ai, boolean serious, boolean checkDiff, int payment, final CardCollection excludedBlockers) {
         // life won't change
         int remainingLife = Integer.MAX_VALUE;
@@ -3225,7 +3541,7 @@ public class ComputerUtil {
 
         // TODO should also consider them as teams (with increased likelihood to be attacked by multiple if ai is biggest threat)
         // TODO worth it to sort by creature amount for chance to terminate earlier?
-        for (Player opp: ai.getOpponents()) {
+        for (Player opp : ai.getOpponents()) {
             Combat combat = new Combat(opp);
             boolean containsAttacker = false;
             boolean thisCombat = ai.getGame().getPhaseHandler().isPlayerTurn(opp) && ai.getGame().getPhaseHandler().getPhase().isBefore(PhaseType.COMBAT_BEGIN);
